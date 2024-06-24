@@ -378,9 +378,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
       setState(() {
         if (player1Wins) {
-          player2Reloads--;
+          player2Reloads--; // Decrementa os reloads do jogador 2
         } else {
-          player1Reloads--;
+          player1Reloads--; // Decrementa os reloads do jogador 1
         }
 
         _turnCount++;
@@ -414,24 +414,38 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _endGame() {
-    // Aqui você pode adicionar a lógica para finalizar o jogo
+    String winnerMessage;
+    if (player1Reloads <= 0 && player2Reloads <= 0) {
+      winnerMessage = 'Empate!';
+    } else {
+      winnerMessage =
+          'Player ${player1Reloads <= 0 ? '2' : '1'} venceu com ${player1Reloads > 0 ? player1Reloads : player2Reloads} reloads restantes!';
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Game Over'),
-          content: Text('Player ${player1Reloads == 0 ? '2' : '1'} venceu!'),
+          content: Text(winnerMessage),
           actions: <Widget>[
             TextButton(
               child: const Text('Fechar'),
               onPressed: () {
                 Navigator.of(context).pop();
+                _restartGame();
               },
             ),
           ],
         );
       },
     );
+  }
+
+  void _restartGame() {
+    setState(() {
+      _initializeGame();
+    });
   }
 }
 
