@@ -420,9 +420,7 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Game Over'),
-          content: player1Reloads == 0
-              ? const Text('Player 2 venceu!')
-              : const Text('Player 1 venceu!'),
+          content: Text('Player ${player1Reloads == 0 ? '2' : '1'} venceu!'),
           actions: <Widget>[
             TextButton(
               child: const Text('Fechar'),
