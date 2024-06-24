@@ -30,7 +30,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String? _selectedAttributePlayer2;
   bool _isPlayer1Turn = true;
   int _turnCount = 0;
-  int _maxTurns = 10; // Número máximo de turnos
+  final int _maxTurns = 100; // Número máximo de turnos
 
   @override
   void initState() {
@@ -375,39 +375,58 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Determina o vencedor do turno
       bool player1Wins = player1Value > player2Value;
+      bool player2Wins = player2Value > player1Value;
 
       setState(() {
-        if (player1Wins) {
+        if (player1Wins && player == 1) {
           player2Reloads--; // Decrementa os reloads do jogador 2
-        } else {
+          player1Reloads++; // Incrementa os reloads do jogador 1 (vencedor)
+        } else if (player2Wins && player == 2) {
           player1Reloads--; // Decrementa os reloads do jogador 1
+          player2Reloads++; // Incrementa os reloads do jogador 2 (vencedor)
+        } else if (player1Wins && player == 2) {
+          player2Reloads--; // Decrementa os reloads do jogador 2
+          player1Reloads++; // Incrementa os reloads do jogador 1 (vencedor)
+        } else if (player2Wins && player == 1) {
+          player1Reloads--; // Decrementa os reloads do jogador 1
+          player2Reloads++; // Incrementa os reloads do jogador 2 (vencedor)
+        } else {
+          // Ambos os jogadores têm o mesmo valor, nada acontece
         }
 
         _turnCount++;
 
         // Verifica se o jogo deve terminar
-        if (_turnCount >= _maxTurns ||
-            player1Reloads <= 0 ||
-            player2Reloads <= 0) {
+        if (player1Reloads <= 0 ||
+            player2Reloads <= 0 ||
+            _turnCount >= _maxTurns) {
           _endGame();
         } else {
+          // Atualiza o estado do jogo para o próximo turno
+          if (player1Wins && player == 1 || player2Wins && player == 2) {
+            // Jogador 1 ou jogador 2 continua jogando
+            _isPlayer1Turn =
+                player == 1; // Atualiza o turno para o próximo jogador
+            player1CanFight = _isPlayer1Turn;
+            player2CanFight = !_isPlayer1Turn;
+            _selectedAttributePlayer1 =
+                player == 1 ? null : _selectedAttributePlayer1;
+            _selectedAttributePlayer2 =
+                player == 2 ? null : _selectedAttributePlayer2;
+          } else {
+            // Alterna o turno se o jogador perdeu
+            _isPlayer1Turn = !_isPlayer1Turn;
+            player1CanFight = _isPlayer1Turn;
+            player2CanFight = !_isPlayer1Turn;
+            if (_isPlayer1Turn) {
+              _selectedAttributePlayer2 = null;
+            } else {
+              _selectedAttributePlayer1 = null;
+            }
+          }
+
           // Carrega novos Pokémon para a próxima rodada
           _fetchPokemonData();
-        }
-
-        // Atualiza o estado do jogo para o próximo turno
-        if (player1Wins) {
-          // Jogador 1 ganhou, continua jogando
-          _isPlayer1Turn = true;
-          player1CanFight = true;
-          player2CanFight = false;
-          _selectedAttributePlayer2 = null; // Limpa o atributo do jogador 2
-        } else {
-          // Jogador 2 ganhou, continua jogando
-          _isPlayer1Turn = false;
-          player1CanFight = false;
-          player2CanFight = true;
-          _selectedAttributePlayer1 = null; // Limpa o atributo do jogador 1
         }
       });
     }
