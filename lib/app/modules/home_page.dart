@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -19,8 +20,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Pokemon _pokemon1;
-  late Pokemon _pokemon2;
+  Pokemon? _pokemon1;
+  Pokemon? _pokemon2;
   bool isLoading = true;
   bool player1CanFight = true;
   bool player2CanFight = false;
@@ -30,7 +31,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String? _selectedAttributePlayer2;
   bool _isPlayer1Turn = true;
   int _turnCount = 0;
-  final int _maxTurns = 100; // Número máximo de turnos
+  final int _maxTurns = 100;
 
   @override
   void initState() {
@@ -39,12 +40,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _initializeGame() async {
-    await _fetchPokemonData();
     setState(() {
+      _pokemon1 = null;
+      _pokemon2 = null;
+      isLoading = true;
       player1Reloads = 20;
       player2Reloads = 20;
       player1CanFight = true;
-      player2CanFight = false; // Player 2 começa desabilitado
+      player2CanFight = false;
+    });
+
+    await _fetchPokemonData();
+
+    await Future.delayed(const Duration(seconds: 3));
+
+    setState(() {
+      isLoading = false;
     });
   }
 
@@ -69,7 +80,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _pokemon1 = pokemonList[0];
       _pokemon2 = pokemonList[1];
-      isLoading = false;
     });
   }
 
@@ -139,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildPokemonContainer(Pokemon pokemon, int player) {
+  Widget _buildPokemonContainer(Pokemon? pokemon, int player) {
     int reloads = player == 1 ? player1Reloads : player2Reloads;
     return Container(
       color: Colors.black54,
@@ -167,7 +177,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
-            child: pokemon.sprites != null
+            child: pokemon != null &&
+                    (player == 1 ? player1CanFight : player2CanFight)
                 ? Image.network(
                     pokemon.sprites!.frontDefault,
                     fit: BoxFit.contain,
@@ -177,7 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Column(
             children: [
               Text(
-                pokemon.name,
+                pokemon != null ? pokemon.name : '?????',
                 style: const TextStyle(
                   fontSize: 24,
                   color: Colors.red,
@@ -188,7 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 height: 16,
               ),
               Text(
-                'Height: ${pokemon.height} cm',
+                pokemon != null ? 'Height: ${pokemon.height} cm' : '?????',
                 style: const TextStyle(
                   fontSize: 18,
                   color: Colors.yellow,
@@ -196,7 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               Text(
-                'Weight: ${pokemon.weight} kg',
+                pokemon != null ? 'Weight: ${pokemon.weight} kg' : '?????',
                 style: const TextStyle(
                   fontSize: 18,
                   color: Colors.yellow,
@@ -204,7 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               Text(
-                'Type(s): ${pokemon.types?.map((type) => type.name).join(", ")}',
+                pokemon != null
+                    ? 'Type(s): ${pokemon.types?.map((type) => type.name).join(", ")}'
+                    : '?????',
                 style: const TextStyle(
                   fontSize: 18,
                   color: Colors.yellow,
@@ -225,7 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(
                 height: 15,
               ),
-              if (pokemon.stats != null)
+              if (pokemon != null &&
+                  (player == 1 ? player1CanFight : player2CanFight))
                 ...pokemon.stats!.map(
                   (stat) => Text(
                     '${stat.name}: ${stat.baseStat}',
@@ -293,8 +307,8 @@ class _MyHomePageState extends State<MyHomePage> {
               Text(
                 'Reloads: $reloads',
                 style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
+                  fontSize: 22,
+                  color: Colors.blue,
                   fontFamily: 'HoltwoodOneSC-Regular',
                 ),
               ),
@@ -307,33 +321,32 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildAttributeDropdown({
     required int player,
-    required void Function(String?) onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
+    final String? selectedAttribute =
+        player == 1 ? _selectedAttributePlayer1 : _selectedAttributePlayer2;
     final List<String> attributes = [
       'HP',
       'Attack',
       'Defense',
       'Special-Attack',
       'Special-Defense',
-      'Speed',
+      'Speed'
     ];
-
-    String? selectedAttribute;
-    if (player == 1) {
-      selectedAttribute = _selectedAttributePlayer1;
-    } else {
-      selectedAttribute = _selectedAttributePlayer2;
-    }
 
     return DropdownButton<String>(
       value: selectedAttribute,
       onChanged: onChanged,
-      items: attributes.map((String attribute) {
+      items: attributes.map((attribute) {
         return DropdownMenuItem<String>(
           value: attribute,
           child: Text(
             attribute,
-            style: const TextStyle(fontSize: 18),
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.blue,
+              fontFamily: 'HoltwoodOneSC-Regular',
+            ),
           ),
         );
       }).toList(),
@@ -342,8 +355,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _fightTurn(int player) {
     String? selectedAttribute;
-    int player1Value = 0; // Valor do jogador 1 no atributo selecionado
-    int player2Value = 0; // Valor do jogador 2 no atributo selecionado
+    int player1Value = 0;
+    int player2Value = 0;
 
     if (player == 1) {
       selectedAttribute = _selectedAttributePlayer1;
@@ -354,23 +367,23 @@ class _MyHomePageState extends State<MyHomePage> {
     if (selectedAttribute != null) {
       // Determina os valores dos atributos para cada jogador
       if (selectedAttribute == 'HP') {
-        player1Value = _pokemon1.stats![0].baseStat;
-        player2Value = _pokemon2.stats![0].baseStat;
+        player1Value = _pokemon1!.stats![0].baseStat;
+        player2Value = _pokemon2!.stats![0].baseStat;
       } else if (selectedAttribute == 'Attack') {
-        player1Value = _pokemon1.stats![1].baseStat;
-        player2Value = _pokemon2.stats![1].baseStat;
+        player1Value = _pokemon1!.stats![1].baseStat;
+        player2Value = _pokemon2!.stats![1].baseStat;
       } else if (selectedAttribute == 'Defense') {
-        player1Value = _pokemon1.stats![2].baseStat;
-        player2Value = _pokemon2.stats![2].baseStat;
+        player1Value = _pokemon1!.stats![2].baseStat;
+        player2Value = _pokemon2!.stats![2].baseStat;
       } else if (selectedAttribute == 'Special-Attack') {
-        player1Value = _pokemon1.stats![3].baseStat;
-        player2Value = _pokemon2.stats![3].baseStat;
+        player1Value = _pokemon1!.stats![3].baseStat;
+        player2Value = _pokemon2!.stats![3].baseStat;
       } else if (selectedAttribute == 'Special-Defense') {
-        player1Value = _pokemon1.stats![4].baseStat;
-        player2Value = _pokemon2.stats![4].baseStat;
+        player1Value = _pokemon1!.stats![4].baseStat;
+        player2Value = _pokemon2!.stats![4].baseStat;
       } else if (selectedAttribute == 'Speed') {
-        player1Value = _pokemon1.stats![5].baseStat;
-        player2Value = _pokemon2.stats![5].baseStat;
+        player1Value = _pokemon1!.stats![5].baseStat;
+        player2Value = _pokemon2!.stats![5].baseStat;
       }
 
       // Determina o vencedor do turno
@@ -378,56 +391,78 @@ class _MyHomePageState extends State<MyHomePage> {
       bool player2Wins = player2Value > player1Value;
 
       setState(() {
-        if (player1Wins && player == 1) {
-          player2Reloads--; // Decrementa os reloads do jogador 2
-          player1Reloads++; // Incrementa os reloads do jogador 1 (vencedor)
-        } else if (player2Wins && player == 2) {
-          player1Reloads--; // Decrementa os reloads do jogador 1
-          player2Reloads++; // Incrementa os reloads do jogador 2 (vencedor)
-        } else if (player1Wins && player == 2) {
-          player2Reloads--; // Decrementa os reloads do jogador 2
-          player1Reloads++; // Incrementa os reloads do jogador 1 (vencedor)
-        } else if (player2Wins && player == 1) {
-          player1Reloads--; // Decrementa os reloads do jogador 1
-          player2Reloads++; // Incrementa os reloads do jogador 2 (vencedor)
-        } else {
-          // Ambos os jogadores têm o mesmo valor, nada acontece
-        }
-
         _turnCount++;
 
-        // Verifica se o jogo deve terminar
-        if (player1Reloads <= 0 ||
-            player2Reloads <= 0 ||
-            _turnCount >= _maxTurns) {
-          _endGame();
-        } else {
-          // Atualiza o estado do jogo para o próximo turno
-          if (player1Wins && player == 1 || player2Wins && player == 2) {
-            // Jogador 1 ou jogador 2 continua jogando
-            _isPlayer1Turn =
-                player == 1; // Atualiza o turno para o próximo jogador
-            player1CanFight = _isPlayer1Turn;
-            player2CanFight = !_isPlayer1Turn;
-            _selectedAttributePlayer1 =
-                player == 1 ? null : _selectedAttributePlayer1;
-            _selectedAttributePlayer2 =
-                player == 2 ? null : _selectedAttributePlayer2;
+        // Mostra os dados do Pokémon que está sendo comparado
+        if ((player1Wins && player == 1) || (player2Wins && player == 2)) {
+          if (player == 1) {
+            player2CanFight = true; // Mostra os dados do Pokémon 2
           } else {
-            // Alterna o turno se o jogador perdeu
-            _isPlayer1Turn = !_isPlayer1Turn;
-            player1CanFight = _isPlayer1Turn;
-            player2CanFight = !_isPlayer1Turn;
-            if (_isPlayer1Turn) {
-              _selectedAttributePlayer2 = null;
-            } else {
-              _selectedAttributePlayer1 = null;
-            }
+            player1CanFight = true; // Mostra os dados do Pokémon 1
           }
-
-          // Carrega novos Pokémon para a próxima rodada
-          _fetchPokemonData();
+        } else {
+          if (player == 1) {
+            player2CanFight = true; // Mostra os dados do Pokémon 2 na derrota
+          } else {
+            player1CanFight = true; // Mostra os dados do Pokémon 1 na derrota
+          }
         }
+
+        // Atualiza o estado do jogo para o próximo turno após 3 segundos
+        Future.delayed(const Duration(seconds: 5), () {
+          setState(() {
+            // Atualiza o estado do jogo de acordo com o vencedor do turno
+            if (player1Wins && player == 1) {
+              // Jogador 1 venceu, atualiza os reloads e os estados
+              player2Reloads--;
+              player1Reloads++;
+            } else if (player2Wins && player == 2) {
+              // Jogador 2 venceu, atualiza os reloads e os estados
+              player1Reloads--;
+              player2Reloads++;
+            } else if (player1Wins && player == 2) {
+              // Jogador 2 venceu, atualiza os reloads e os estados
+              player2Reloads--;
+              player1Reloads++;
+            } else if (player2Wins && player == 1) {
+              // Jogador 1 venceu, atualiza os reloads e os estados
+              player1Reloads--;
+              player2Reloads++;
+            } else {
+              // Empate, nada acontece
+            }
+
+            // Verifica se o jogo deve terminar
+            if (player1Reloads <= 0 ||
+                player2Reloads <= 0 ||
+                _turnCount >= _maxTurns) {
+              _endGame();
+            } else {
+              // Atualiza o turno para o próximo jogador
+              if (player1Wins && player == 1 || player2Wins && player == 2) {
+                _isPlayer1Turn = player == 1;
+                player1CanFight = _isPlayer1Turn;
+                player2CanFight = !_isPlayer1Turn;
+                _selectedAttributePlayer1 =
+                    player == 1 ? null : _selectedAttributePlayer1;
+                _selectedAttributePlayer2 =
+                    player == 2 ? null : _selectedAttributePlayer2;
+              } else {
+                _isPlayer1Turn = !_isPlayer1Turn;
+                player1CanFight = _isPlayer1Turn;
+                player2CanFight = !_isPlayer1Turn;
+                if (_isPlayer1Turn) {
+                  _selectedAttributePlayer2 = null;
+                } else {
+                  _selectedAttributePlayer1 = null;
+                }
+              }
+
+              // Carrega novos Pokémon para a próxima rodada
+              _fetchPokemonData();
+            }
+          });
+        });
       });
     }
   }
