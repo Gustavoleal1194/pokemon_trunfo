@@ -335,22 +335,26 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
 
     return DropdownButton<String>(
-      value: selectedAttribute,
-      onChanged: onChanged,
-      items: attributes.map((attribute) {
-        return DropdownMenuItem<String>(
-          value: attribute,
-          child: Text(
-            attribute,
-            style: const TextStyle(
-              fontSize: 18,
-              color: Colors.blue,
-              fontFamily: 'HoltwoodOneSC-Regular',
+        value: selectedAttribute,
+        onChanged: onChanged,
+        items: attributes.map((attribute) {
+          return DropdownMenuItem<String>(
+            value: attribute,
+            child: Text(
+              attribute,
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.blue,
+                fontFamily: 'HoltwoodOneSC-Regular',
+              ),
             ),
-          ),
-        );
-      }).toList(),
-    );
+          );
+        }).toList(),
+        hint: const Text(
+          "Select Atributte",
+          style: TextStyle(
+              color: Colors.blue, fontFamily: 'HoltwoodOneSC-Regular'),
+        ));
   }
 
   void _fightTurn(int player) {
@@ -365,7 +369,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     if (selectedAttribute != null) {
-      // Determina os valores dos atributos para cada jogador
       if (selectedAttribute == 'HP') {
         player1Value = _pokemon1!.stats![0].baseStat;
         player2Value = _pokemon2!.stats![0].baseStat;
@@ -386,59 +389,47 @@ class _MyHomePageState extends State<MyHomePage> {
         player2Value = _pokemon2!.stats![5].baseStat;
       }
 
-      // Determina o vencedor do turno
       bool player1Wins = player1Value > player2Value;
       bool player2Wins = player2Value > player1Value;
 
       setState(() {
         _turnCount++;
 
-        // Mostra os dados do Pokémon que está sendo comparado
         if ((player1Wins && player == 1) || (player2Wins && player == 2)) {
           if (player == 1) {
-            player2CanFight = true; // Mostra os dados do Pokémon 2
+            player2CanFight = true;
           } else {
-            player1CanFight = true; // Mostra os dados do Pokémon 1
+            player1CanFight = true;
           }
         } else {
           if (player == 1) {
-            player2CanFight = true; // Mostra os dados do Pokémon 2 na derrota
+            player2CanFight = true;
           } else {
-            player1CanFight = true; // Mostra os dados do Pokémon 1 na derrota
+            player1CanFight = true;
           }
         }
 
-        // Atualiza o estado do jogo para o próximo turno após 3 segundos
         Future.delayed(const Duration(seconds: 5), () {
           setState(() {
-            // Atualiza o estado do jogo de acordo com o vencedor do turno
             if (player1Wins && player == 1) {
-              // Jogador 1 venceu, atualiza os reloads e os estados
               player2Reloads--;
               player1Reloads++;
             } else if (player2Wins && player == 2) {
-              // Jogador 2 venceu, atualiza os reloads e os estados
               player1Reloads--;
               player2Reloads++;
             } else if (player1Wins && player == 2) {
-              // Jogador 2 venceu, atualiza os reloads e os estados
               player2Reloads--;
               player1Reloads++;
             } else if (player2Wins && player == 1) {
-              // Jogador 1 venceu, atualiza os reloads e os estados
               player1Reloads--;
               player2Reloads++;
-            } else {
-              // Empate, nada acontece
-            }
+            } else {}
 
-            // Verifica se o jogo deve terminar
             if (player1Reloads <= 0 ||
                 player2Reloads <= 0 ||
                 _turnCount >= _maxTurns) {
               _endGame();
             } else {
-              // Atualiza o turno para o próximo jogador
               if (player1Wins && player == 1 || player2Wins && player == 2) {
                 _isPlayer1Turn = player == 1;
                 player1CanFight = _isPlayer1Turn;
@@ -458,7 +449,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
               }
 
-              // Carrega novos Pokémon para a próxima rodada
               _fetchPokemonData();
             }
           });
